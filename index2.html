@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Precios de Criptomonedas</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.css">
+</head>
+<body>
+    <style>
+        .positive {
+          color: green;
+        }
+
+        .negative {
+          color: red;
+        }
+      </style>
+    <table id="pricesTable" class="table table-striped">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Price (USD)</th>
+                <th>24h %</th>
+                <th>Market Cap</th>
+                <th>Volume (24h)</th>
+                <th>Circulating Supply</th>
+            </tr>
+        </thead>
+        <tbody id="pricesTableBody"></tbody>
+    </table>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.js"></script>
+
+    <script>
+        // Obtener la referencia a la tabla en HTML
+        var pricesTable = document.getElementById("pricesTableBody");
+        var currentPage = 1;
+        var coinsPerPage = 30;
+
+        function updateTable() {
+            // Calcular los parámetros de paginación
+            var start = (currentPage - 1) * coinsPerPage;
+            var end = start + coinsPerPage;
+
+            // Hacer una solicitud a la API de CoinGecko para obtener las criptomonedas correspondientes a la página actual
+            fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=${coinsPerPage}&page=${currentPage}&sparkline=false`)
+                .then(response => response.json())
+                .then(data => {
+                    // Limpiar la tabla antes de agregar las nuevas filas
+                    pricesTable.innerHTML = "";
+
+                    // Recorrer los datos y crear filas en la tabla
+                    data.forEach(coin => {
+                        var row = pricesTable.insertRow();
+                        var nameCell = row.insertCell(0);
+                        var priceCell = row.insertCell(1);
+                        var percent24hCell = row.insertCell(2);
+                        var marketCapCell = row.insertCell(3);
+                        var volumeCell = row.insertCell(4);
+                        var circulatingSupplyCell = row.insertCell(5);
+
+                        // Agregar el icono de la criptomoneda
+                        var icon = document.createElement("img");
+                        icon.src = coin.image;
+                        icon.style.width = "20px"; // Ajusta el tamaño del ícono según tus necesidades
+                        nameCell.appendChild(icon);
+
+                        // Agregar el nombre de la criptomoneda
+                        nameCell.innerHTML += " " + coin.name;
+
+                        // Resto de las celdas
+                        priceCell.innerHTML = coin.current_price;
+
+                        // Aplicar clases CSS en función del porcentaje
+                        if (coin.price_change_percentage_24h < 0) {
+                            percent24hCell.classList.add("negative");
+                        } else {
+                            percent24hCell.classList.add("positive");
+                        }
+                        percent24hCell.innerHTML = coin.price_change_percentage_24h;
+
+                        marketCapCell.innerHTML = coin.market_cap;
+                        volumeCell.innerHTML = coin.total_volume;
+                        circulatingSupplyCell.innerHTML = coin.circulating_supply;
+                    });
+
+                    // Inicializar DataTables después de agregar las filas
+                    $('#pricesTable').DataTable({
+                        "paging": true,
+                        "pageLength": 10,
+                        "searching": true
+                    });
+                })
+                .catch(error => {
+                    console.log('Error:', error);
+                });
+        }
+
+        // Actualizar la tabla al cargar la página
+        updateTable();
+    </script>
+</body>
+</html>
